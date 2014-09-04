@@ -34,6 +34,11 @@ class TrigonometryMixin(object):
         C = math.acos(cos_C)
         return math.degrees(C)
 
+    @classmethod
+    def side_by_angles_and_side(cls, a, angle_a, angle_b):
+        # applies law of sines where we are trying to return the side b (opposit corner of angle B)
+        b = (math.sin(math.radians(angle_b)) * a) / math.sin(math.radians(angle_a))
+        return b
 
 
 class Shooter(object):
@@ -180,27 +185,38 @@ class LeadCalculator(UnitConversionsMixin):
         delta_y = thrower.position[1] - shooter.position[1]
         thrower_shooter_distance = math.sqrt(delta_x**2 + delta_y**2)
 
-        # find angles
-        
+        # find angle to thrower
+        cos_angle = abs(delta_y) / thrower_shooter_distance
+        angle_to_thrower = math.degrees(math.acos(cos_angle))
+        if delta_x >= 0:
+            if delta_y >= 0:
+                #quadrant I
+            else:
+                #quadrant II
+                angle_to_thrower = 180 - angle_to_thrower
+        else:
+            if delta_y >= 0:
+                #quadrant IV
+                angle_to_thrower = 360 - angle_to_thrower
+            else:
+                #quadrant III
+                angle_to_thrower = 180 + angle_to_thrower
+
+        # find broad shooter angle
+        broad_shooter_angle = abs(angle_to_thrower - shot_angle)
+
+        # find broad thrower angle
+        thrower_to_shooter_angle = (angle_to_thrower + 180) % 360
+        broad_thrower_angle = abs(thrower.direction - thrower_to_shooter_angle)
+
+        # find broad breakpoint angle
+        broad_breakpoint_angle = 180 - (broad_thrower_angle + broad_shooter_angle)
 
         # get shot_distance
+        shot_distance = cls.side_by_angles_and_side(thrower_shooter_distance, broad_breakpoint_angle, broad_thrower_angle)
 
         # get target_distance
-
-
-    @classmethod
-    def actual_lead_by_target_location(cls, shooter, thrower, target_location):
-        # target location (location of target when you pull the trigger) in cartesian coordinates tuple(x,y)
-        pass
-
-    @classmethod
-    def actual_lead_by_target_traveled_distance(cls, shooter, thrower, distance):
-        # target distance traveled in feet.  Distance from thrower.
-        pass
-
-    @classmethod
-    def actual_lead_to_visual_lead(cls, actual_lead, thrower):
-        pass
+        clay_distance = cls.side_by_angles_and_side(thrower_shooter_distance, broad_breakpoint_angle, broad_shooter_angle)
 
     @classmethod
     def visual_lead_to_thumbs(cls, visual_lead):
