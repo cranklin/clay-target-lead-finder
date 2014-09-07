@@ -102,7 +102,7 @@ class Thrower(object):
             rads = math.radians(angle)
             y_diff = math.cos(rads) * hypotenuse
             x_diff = math.sin(rads) * hypotenuse
-        return (x_diff + offset[0], y_diff + offset[1])
+        return (round(x_diff + offset[0], 2), round(y_diff + offset[1], 2))
 
     def destination_to_direction(self, destination):
         x_diff = destination[0] - self.position[0]
@@ -127,7 +127,7 @@ class Thrower(object):
         return direction
 
 
-class LeadCalculator(UnitConversionsMixin):
+class LeadCalculator(UnitConversionsMixin, TrigonometryMixin):
     '''
     Lead Calculator class
     '''
@@ -166,14 +166,14 @@ class LeadCalculator(UnitConversionsMixin):
         visual_lead_ft = target_distance * math.sin(math.radians(lead_angle))
 
         return {
-            'lead_ft': target_diff,
-            'lead_angle': lead_angle,
-            'visual_lead_ft': visual_lead_ft,
+            'lead_ft': round(target_diff, 2),
+            'lead_angle': round(lead_angle, 2),
+            'visual_lead_ft': round(visual_lead_ft, 2),
             'breakpoint': breakpoint,
             'pullpoint': target_location,
-            'shot_distance': shot_distance,
-            'target_distance': target_distance,
-            'trajectory': thrower.direction
+            'shot_distance': round(shot_distance, 2),
+            'target_distance': round(target_distance, 2),
+            'trajectory': round(thrower.direction, 2)
         }
 
     @classmethod
@@ -191,6 +191,7 @@ class LeadCalculator(UnitConversionsMixin):
         if delta_x >= 0:
             if delta_y >= 0:
                 #quadrant I
+                pass
             else:
                 #quadrant II
                 angle_to_thrower = 180 - angle_to_thrower
@@ -212,11 +213,47 @@ class LeadCalculator(UnitConversionsMixin):
         # find broad breakpoint angle
         broad_breakpoint_angle = 180 - (broad_thrower_angle + broad_shooter_angle)
 
-        # get shot_distance
+        # get breakpoint distance from shooter
         shot_distance = cls.side_by_angles_and_side(thrower_shooter_distance, broad_breakpoint_angle, broad_thrower_angle)
 
-        # get target_distance
-        clay_distance = cls.side_by_angles_and_side(thrower_shooter_distance, broad_breakpoint_angle, broad_shooter_angle)
+        # get breakpoint distance from thrower
+        breakpoint_distance_from_thrower = cls.side_by_angles_and_side(thrower_shooter_distance, broad_breakpoint_angle, broad_shooter_angle)
+
+        # get breakpoint location
+        breakpoint = thrower.direction_to_destination(thrower.direction, breakpoint_distance_from_thrower)
+        
+        # get shot time
+        shot_time = shot_distance / shooter.velocity
+
+        # get actual lead
+        target_diff = cls.mph_to_fps(thrower.velocity) * shot_time
+
+        # reverse direction
+        reverse_direction = (thrower.direction + 180) % 360
+        target_location = thrower.direction_to_destination(reverse_direction, target_diff, breakpoint)
+
+        # find target distance from shooter at moment of trigger pull
+        pull_x_diff = target_location[0] - shooter.position[0]
+        pull_y_diff = target_location[1] - shooter.position[1]
+        target_distance = math.sqrt(pull_x_diff**2 + pull_y_diff**2)
+
+        # find lead in angle
+        lead_angle = cls._get_angle_by_sides(shot_distance, target_distance, target_diff)
+
+        # find visual lead in ft
+        visual_lead_ft = target_distance * math.sin(math.radians(lead_angle))
+
+        return {
+            'lead_ft': round(target_diff, 2),
+            'lead_angle': round(lead_angle, 2),
+            'visual_lead_ft': round(visual_lead_ft, 2),
+            'breakpoint': breakpoint,
+            'pullpoint': target_location,
+            'shot_distance': round(shot_distance, 2),
+            'target_distance': round(target_distance, 2),
+            'trajectory': round(thrower.direction, 2)
+        }
+
 
     @classmethod
     def visual_lead_to_thumbs(cls, visual_lead):
@@ -236,17 +273,20 @@ thrower4 = Thrower(position=(40,150), direction=270)
 
 #import ipdb; ipdb.set_trace()
 #print LeadCalculator.lead_by_breakpoint_location(shooter, thrower, (90, 126.6))
-print LeadCalculator.lead_by_breakpoint_location(shooter, thrower4, (0, 150))
-print LeadCalculator.lead_by_breakpoint_location(shooter, thrower3, (0, 120))
-print LeadCalculator.lead_by_breakpoint_location(shooter, thrower2, (0, 90))
-print LeadCalculator.lead_by_breakpoint_location(shooter, thrower1, (0, 60))
+
+#print LeadCalculator.lead_by_breakpoint_location(shooter, thrower4, (0, 150))
+#print LeadCalculator.lead_by_breakpoint_location(shooter, thrower3, (0, 120))
+#print LeadCalculator.lead_by_breakpoint_location(shooter, thrower2, (0, 90))
+#print LeadCalculator.lead_by_breakpoint_location(shooter, thrower1, (0, 60))
 
 print LeadCalculator.lead_by_breakpoint_location(shooter2, thrower4, (0, 150))
 print LeadCalculator.lead_by_breakpoint_location(shooter2, thrower3, (0, 120))
 print LeadCalculator.lead_by_breakpoint_location(shooter2, thrower2, (0, 90))
 print LeadCalculator.lead_by_breakpoint_location(shooter2, thrower1, (0, 60))
 
-print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower4, (0, 150))
-print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower3, (0, 120))
-print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower2, (0, 90))
-print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower1, (0, 60))
+#print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower4, (0, 150))
+#print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower3, (0, 120))
+#print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower2, (0, 90))
+#print LeadCalculator.lead_by_breakpoint_location(shooter3, thrower1, (0, 60))
+
+print LeadCalculator.lead_by_shooter_angle(shooter2, thrower4, 0)
