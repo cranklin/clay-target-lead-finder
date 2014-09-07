@@ -21,6 +21,14 @@ class UnitConversionsMixin(object):
         '''
         return (mph * 5280) / 3600
 
+    @classmethod
+    def angle_to_thumbs(cls, angle):
+        '''
+        converts degree angle to thumbs.  
+        this method assumes the average human thumb width is approximately 2 degrees
+        '''
+        return angle / 2
+
 
 class TrigonometryMixin(object):
     '''
@@ -162,12 +170,16 @@ class LeadCalculator(UnitConversionsMixin, TrigonometryMixin):
         # find lead in angle
         lead_angle = cls._get_angle_by_sides(shot_distance, target_distance, target_diff)
 
+        # find lead in thumb widths
+        lead_thumbs = cls.angle_to_thumbs(lead_angle)
+
         # find visual lead in ft
         visual_lead_ft = target_distance * math.sin(math.radians(lead_angle))
 
         return {
             'lead_ft': round(target_diff, 2),
             'lead_angle': round(lead_angle, 2),
+            'lead_thumbs': round(lead_thumbs, 2),
             'visual_lead_ft': round(visual_lead_ft, 2),
             'breakpoint': breakpoint,
             'pullpoint': target_location,
@@ -240,12 +252,16 @@ class LeadCalculator(UnitConversionsMixin, TrigonometryMixin):
         # find lead in angle
         lead_angle = cls._get_angle_by_sides(shot_distance, target_distance, target_diff)
 
+        # find lead in thumb widths
+        lead_thumbs = cls.angle_to_thumbs(lead_angle)
+
         # find visual lead in ft
         visual_lead_ft = target_distance * math.sin(math.radians(lead_angle))
 
         return {
             'lead_ft': round(target_diff, 2),
             'lead_angle': round(lead_angle, 2),
+            'lead_thumbs': round(lead_thumbs, 2),
             'visual_lead_ft': round(visual_lead_ft, 2),
             'breakpoint': breakpoint,
             'pullpoint': target_location,
@@ -254,10 +270,6 @@ class LeadCalculator(UnitConversionsMixin, TrigonometryMixin):
             'trajectory': round(thrower.direction, 2)
         }
 
-
-    @classmethod
-    def visual_lead_to_thumbs(cls, visual_lead):
-        pass
 
 
 shooter = Shooter(velocity=1300)
